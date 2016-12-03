@@ -66,10 +66,96 @@ class Command {
 		}
 	    
 	}
+	//doesnt work...preparedstatement?
+	private void deleteReservation(){
+		try {
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery("DELETE FROM Reservation WHERE rID =" + this.input.get(0));
+			rs = stmt.executeQuery("select * from Reservation");
+		    while(rs.next()){
+		       System.out.println(rs.getString("rID"));
+		    }
+		} catch (SQLException e) {
+			System.out.println("Connection Failed! Check output console");
+			e.printStackTrace();
+		}
+	}
+	//Check Available Rooms
+	private void openRooms(){
+		try {
+			System.out.println("Rooms currently available:");
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery("select rName, bedTypeID from Room where reserved = 0");
+		    while(rs.next()){
+		       System.out.print("Room Number: " + rs.getString("rName") +", Bed Type: ");
+		       Statement tmpStmt = connection.createStatement();
+		       ResultSet rs2 = tmpStmt.executeQuery("select bedName from BedType where bedTypeID = " + rs.getString("bedTypeID"));
+		       rs2.next();
+		       System.out.println(rs2.getString("bedName"));
+		    }
+		} catch (SQLException e) {
+			System.out.println("Connection Failed! Check output console");
+			e.printStackTrace();
+		}
+	}
+	//Get bed types
+	private void getBedTypes(){
+		try {
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery("select * from BedType");
+		    while(rs.next()){
+		       System.out.println("Bed Type ID: " + rs.getString("bedTypeID") +", Bed Type: " + rs.getString("bedName"));
+		    }
+		} catch (SQLException e) {
+			System.out.println("Connection Failed! Check output console");
+			e.printStackTrace();
+		}
+	}
+	private void customerReservation(){
+		try {
+			if(input.size() != 2){
+				System.out.println("Error: Please input both firstname and lastname of customer");
+			}else{
+			stmt = connection.createStatement();
+			//Get cID of customer
+			ResultSet cust = stmt.executeQuery("select * from Customer where fName = \'" +input.get(0) + "\' and lName = \'" + input.get(1) + "\'");
+			cust.next();
+			rs = stmt.executeQuery("select * from Reservation where cID = " + cust.getString("cID"));
+			if(!rs.next()){
+				System.out.println("The customer, " + input.get(0) + " " + input.get(1) + " does not current have a reservation at the DeNGoHotel.");
+			}
+			rs.beforeFirst();
+		    while(rs.next()){
+				    System.out.print("Customer " +input.get(0) + " " +input.get(1)
+				    		+ " currently has a reservation from " + rs.getString("dateIN")
+				    		+ " until " +rs.getString("dateOUT") + " in Room Number ");
+				    Statement tmpStmt = connection.createStatement();
+				    ResultSet room = tmpStmt.executeQuery("select * from Room where roomID = " + rs.getString("roomID"));
+				    room.next();
+				    System.out.println(room.getString("rName"));
+		    	}
+		    }
+		} catch (SQLException e) {
+			System.out.println("Error in command, please try again.");
+			e.printStackTrace();
+		}
+	}
 	public void execute() throws Exception {
 		
 			if(this.cmd.equals("getCustomers")){
 				this.getCustomers();
+			}
+			else if(this.cmd.equals("deleteReservation")){
+				this.deleteReservation();
+			}
+			else if(this.cmd.equals("openRooms")){
+				this.openRooms();
+			}
+			else if(this.cmd.equals("getBedTypes")){
+				this.getBedTypes();
+			}
+			else if(this.cmd.equals("customerReservation")){
+				this.customerReservation();
 			}
 			else{
 				throw new Exception("unrecognized command: " + this.cmd);
