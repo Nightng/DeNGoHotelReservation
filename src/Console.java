@@ -140,6 +140,19 @@ class Command {
 			e.printStackTrace();
 		}
 	}
+	private void checkPricing() {
+		try {
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery("select * from room");
+		    while(rs.next()){
+		       System.out.println("roomID= "+rs.getString("roomID")+", "+"price= " + rs.getInt("price"));
+		    }
+		} catch (SQLException e) {
+			System.out.println("Connection Failed! Check output console");
+			e.printStackTrace();
+		}
+	}
+
 	public void execute() throws Exception {
 		
 			if(this.cmd.equals("getCustomers")){
@@ -156,6 +169,9 @@ class Command {
 			}
 			else if(this.cmd.equals("customerReservation")){
 				this.customerReservation();
+			}
+			else if( this.cmd.equals("checkPricing") ) {
+				this.checkPricing();
 			}
 			else{
 				throw new Exception("unrecognized command: " + this.cmd);
