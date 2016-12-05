@@ -126,6 +126,20 @@ class Command {
 			e.printStackTrace();
 		}
 	}
+	
+	private void checkRoomTypes(){
+		try{
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery("select * from RoomType");
+			while(rs.next()){
+			       System.out.println("Room Type ID: " + rs.getString("rTypeID") +", Max number of occupants: " + rs.getString("max"));
+			    }
+		}
+		catch (SQLException e) {
+			System.out.println("Connection Failed! Check output console");
+			e.printStackTrace();
+		}
+	}
 	private void customerReservation(){
 		try {
 			if(input.size() != 2){
@@ -335,6 +349,8 @@ class Command {
 			e.printStackTrace();
 		}
 	}
+	
+	
 		 		 
 	public void execute() throws Exception {
 		
@@ -368,6 +384,9 @@ class Command {
 			else if( this.cmd.equals("addReservation") ) {
 				 this.addReservation();
 			}	
+			else if( this.cmd.equals("checkRoomTypes")){
+				this.checkRoomTypes();
+			}
 			else{
 				throw new Exception("unrecognized command: " + this.cmd);
 			}
@@ -446,6 +465,7 @@ public class Console {
 		System.out.println("checkDates - to see the dates available");		
 		System.out.println("customerReservation [firstName] [lastName] - to see the customer's reservation");
 		System.out.println("checkPricing - to check for pricing");		
+		System.out.println("checkRoomTypes - to check for room size types");		
 		System.out.println("quit - to exit");
 	    Console console = new Console();
 		console.repl(connection);		
