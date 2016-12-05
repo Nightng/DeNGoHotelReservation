@@ -1,4 +1,6 @@
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,6 +12,8 @@ import java.sql.Statement;
 import java.util.Properties;
 
 import javax.sql.DataSource;
+
+
 
 
 
@@ -66,15 +70,26 @@ class Command {
 		}
 	    
 	}
-	//doesnt work...preparedstatement?
+
 	private void deleteReservation(){
 		try {
-			stmt = connection.createStatement();
-			rs = stmt.executeQuery("DELETE FROM Reservation WHERE rID =" + this.input.get(0));
-			rs = stmt.executeQuery("select * from Reservation");
-		    while(rs.next()){
-		       System.out.println(rs.getString("rID"));
-		    }
+			System.out.println("Please input the following in order to delete a reservation: ");
+			String fName;
+			String lName;			
+			int cID = 0;
+			Scanner scan = new Scanner(System.in);
+ 			System.out.print("First Name: ");
+ 			fName = scan.next();
+ 			System.out.print("Last Name: ");
+ 			lName = scan.next();
+ 			stmt = connection.createStatement();
+ 			rs = stmt.executeQuery("select * FROM CUSTOMER WHERE fName= '" + fName + "' AND lName= '" + lName + "';");
+ 			if (rs.next()) {
+ 				cID = rs.getInt("cId");
+ 			}
+ 			stmt = connection.createStatement();
+ 			stmt.executeUpdate("DELETE FROM RESERVATION WHERE cID= " + cID + ";"); 	
+ 			System.out.println("Success! " + fName + " " + lName + " your reservation was deleted.");			
 		} catch (SQLException e) {
 			System.out.println("Connection Failed! Check output console");
 			e.printStackTrace();
@@ -231,19 +246,19 @@ class Command {
  			System.out.print("Last Name: ");
  			oldLName = scan.next();
  			stmt = connection.createStatement();
-			rs = stmt.executeQuery("select * FROM CUSTOMER WHERE fName= '" + oldFName + "' AND lName= '" + oldLName + "';"); 
-		    while(rs.next()){
-		    	id = rs.getInt("cId");
-		       System.out.println("ID = "+rs.getInt("cId"));
-		       System.out.println("Name = "+rs.getString("fName")+" "+rs.getString("lName"));
-		       System.out.println("Address = "+rs.getString("addrST"));
-		       System.out.println("Country: "+rs.getString("country"));
-		       System.out.println("City: "+rs.getString("city"));
-		       System.out.println("ZipCode: "+rs.getString("zipCode"));
-		       System.out.println("Phone: " +rs.getString("phone"));
-		       System.out.println("Email: " +rs.getString("email"));		       
-		    }
- 			System.out.println("Please input the following to update: ");
+ 			
+			rs = stmt.executeQuery("select * FROM CUSTOMER WHERE fName= '" + oldFName + "' AND lName= '" + oldLName + "';");
+			 while(rs.next()){
+				 id = rs.getInt("cId");
+				 System.out.println("Name = "+rs.getString("fName")+" "+rs.getString("lName"));
+				 System.out.println("Address = "+rs.getString("addrST"));
+				 System.out.println("Country: "+rs.getString("country"));
+				 System.out.println("City: "+rs.getString("city"));
+				 System.out.println("ZipCode: "+rs.getString("zipCode"));
+				 System.out.println("Phone: " +rs.getString("phone"));
+				 System.out.println("Email: " +rs.getString("email"));
+			 }
+			System.out.println("Please input the following to update: ");
  			System.out.print("First Name: ");
  			fName = scan.next();
  			System.out.print("Last Name: ");
@@ -269,6 +284,56 @@ class Command {
  			System.out.println("Connection Failed! Check output console");
  			e.printStackTrace();
  		}
+	}
+	
+	
+	//**TODO: ADD DATE
+	private void addReservation() throws ParseException{
+		try {					
+			this.openRooms();
+			System.out.println("Please input the following in order to make a reservation: ");
+			String fName;
+			String lName;
+			String rName;
+			int id = 0;
+			int roomID = 0;
+			String dateIn;			             	        
+			String dateOut;
+			Scanner scan = new Scanner(System.in);
+ 			System.out.print("First Name: ");
+ 			fName = scan.next();
+ 			System.out.print("Last Name: ");
+ 			lName = scan.next();
+ 			System.out.print("Date-in: ");
+ 			dateIn = scan.next();
+ 			System.out.print("Date-out: ");
+ 			dateOut = scan.next();
+ 			stmt = connection.createStatement();
+ 			rs = stmt.executeQuery("select * FROM CUSTOMER WHERE fName= '" + fName + "' AND lName= '" + lName + "';");
+ 			if (rs.next()) {
+ 				id = rs.getInt("cId");
+ 			}
+ 			System.out.print("Room Number: ");
+ 			rName = scan.next(); 		
+ 			rs = stmt.executeQuery("select * FROM ROOM WHERE rName= '" + rName + "';");
+ 			if (rs.next()) {
+ 				roomID = rs.getInt("roomID");
+ 			}
+			stmt = connection.createStatement();		
+			String payDUE = "0";
+			int payAMT = 0;
+			boolean paid = false;			
+//			SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd"); 
+//	        java.sql.Date dIn= new java.sql.Date(format.parse(dateIn).getTime());
+//	        java.sql.Date dOut= new java.sql.Date(format.parse(dateOut).getTime());
+//	        java.sql.Date dDue= new java.sql.Date(format.parse(payDUE).getTime());
+ 			stmt.executeUpdate("INSERT INTO RESERVATION " + "(cID, roomID, payAMT, paid)"
+ 					+ " VALUES (" + id + ", " + roomID + ", " + payAMT + ", " + paid + ");"); 	
+ 			System.out.println("Success! " + fName + " " + lName + " your reservation was added."); 		
+		} catch (SQLException e) {
+			System.out.println("Connection Failed! Check output console");
+			e.printStackTrace();
+		}
 	}
 		 		 
 	public void execute() throws Exception {
@@ -299,6 +364,9 @@ class Command {
 			}	
 			else if( this.cmd.equals("updateCustomer") ) {
 				 this.updateCustomer();
+			}	
+			else if( this.cmd.equals("addReservation") ) {
+				 this.addReservation();
 			}	
 			else{
 				throw new Exception("unrecognized command: " + this.cmd);
