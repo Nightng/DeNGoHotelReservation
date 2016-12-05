@@ -11,6 +11,9 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
+
+
+import com.mysql.jdbc.PreparedStatement;
 //import javax.sql.DataSource;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 
@@ -38,9 +41,6 @@ class DataSourceFactory {
 }
 
 class Command {
-
-     
-    
     private Connection connection =  null; 
     private Statement stmt = null;
     private ResultSet rs = null;
@@ -140,9 +140,140 @@ class Command {
 			e.printStackTrace();
 		}
 	}
+	private void checkPricing() {
+		 		try {
+		 			stmt = connection.createStatement();
+		 			rs = stmt.executeQuery("select * from room");
+		 		    while(rs.next()){
+		 		       System.out.println("roomID = "+rs.getString("roomID")+", "+"price = " + rs.getInt("price"));
+		 		    }
+		 		} catch (SQLException e) {
+		 			System.out.println("Connection Failed! Check output console");
+		 			e.printStackTrace();
+		 		}
+		 	}
+	
+	private void addCustomer(){
+ 		try {
+ 			String fName;
+ 			String lName;
+ 			String addrST;
+ 			String country;
+ 			String city;
+ 			String zipCode;
+ 			String phone;
+ 			String email; 			
+ 			Scanner scan = new Scanner(System.in);
+ 			System.out.println("Please input the following: ");
+ 			System.out.print("First Name: ");
+ 			fName = scan.next();
+ 			System.out.print("Last Name: ");
+ 			lName = scan.next();
+ 			System.out.print("Address: ");
+ 			addrST = scan.next();
+ 			System.out.print("Country: ");
+ 			country = scan.next();
+ 			System.out.print("City: ");
+ 			city = scan.next();
+ 			System.out.print("Zip Code: ");
+ 			zipCode = scan.next();
+ 			System.out.print("Phone: ");
+ 			phone = scan.next();
+ 			System.out.print("Email: ");
+ 			email = scan.next(); 			
+			stmt = connection.createStatement();			
+ 			stmt.executeUpdate("INSERT INTO CUSTOMER " + "(fName, lName, addrST, country, city, zipCode, phone, email)"
+ 					+ " VALUES ('" + fName + "', '" + lName + "', '" + addrST + "', '" + country + "', '" + city + "', " + zipCode 
+ 					+ ", " + phone + ", '" + email + "');"); 	
+ 			System.out.println("Success! " + fName + " " + lName + " was added.");
+ 		} catch (SQLException e) {
+ 			System.out.println("Connection Failed! Check output console");
+ 			e.printStackTrace();
+ 		}
+	}
+	
+	private void deleteCustomer(){
+ 		try {
+ 			String fName;
+ 			String lName;
+ 			Scanner scan = new Scanner(System.in);
+ 			System.out.println("Please input the following to be deleted: ");
+ 			System.out.print("First Name: ");
+ 			fName = scan.next();
+ 			System.out.print("Last Name: ");
+ 			lName = scan.next();
+			stmt = connection.createStatement();			
+ 			stmt.executeUpdate("DELETE FROM CUSTOMER WHERE fName= '" + fName + "' AND lName= '" + lName + "';"); 	
+ 			System.out.println("Success! " + fName + " " + lName + " was deleted.");
+ 		} catch (SQLException e) {
+ 			System.out.println("Connection Failed! Check output console");
+ 			e.printStackTrace();
+ 		}
+	}
+	
+	private void updateCustomer(){
+ 		try {
+ 			String oldFName;
+ 			String oldLName;
+ 			int id = 0;
+ 			String fName;
+ 			String lName;
+ 			String addrST;
+ 			String country;
+ 			String city;
+ 			String zipCode;
+ 			String phone;
+ 			String email; 			
+ 			Scanner scan = new Scanner(System.in);
+ 			System.out.println("Please input the following to find the customer to update: ");
+ 			System.out.print("First Name: ");
+ 			oldFName = scan.next();
+ 			System.out.print("Last Name: ");
+ 			oldLName = scan.next();
+ 			stmt = connection.createStatement();
+			rs = stmt.executeQuery("select * FROM CUSTOMER WHERE fName= '" + oldFName + "' AND lName= '" + oldLName + "';"); 
+		    while(rs.next()){
+		    	id = rs.getInt("cId");
+		       System.out.println("ID = "+rs.getInt("cId"));
+		       System.out.println("Name = "+rs.getString("fName")+" "+rs.getString("lName"));
+		       System.out.println("Address = "+rs.getString("addrST"));
+		       System.out.println("Country: "+rs.getString("country"));
+		       System.out.println("City: "+rs.getString("city"));
+		       System.out.println("ZipCode: "+rs.getString("zipCode"));
+		       System.out.println("Phone: " +rs.getString("phone"));
+		       System.out.println("Email: " +rs.getString("email"));		       
+		    }
+ 			System.out.println("Please input the following to update: ");
+ 			System.out.print("First Name: ");
+ 			fName = scan.next();
+ 			System.out.print("Last Name: ");
+ 			lName = scan.next();
+ 			System.out.print("Address: ");
+ 			addrST = scan.next();
+ 			System.out.print("Country: ");
+ 			country = scan.next();
+ 			System.out.print("City: ");
+ 			city = scan.next();
+ 			System.out.print("Zip Code: ");
+ 			zipCode = scan.next();
+ 			System.out.print("Phone: ");
+ 			phone = scan.next();
+ 			System.out.print("Email: ");
+ 			email = scan.next(); 			
+			stmt = connection.createStatement();			
+ 			stmt.executeUpdate("UPDATE CUSTOMER SET	fName='" + fName + "', lName='" + lName + "', addrST='" + addrST
+ 					+ "', country='" + country + "', city='" + city + "', zipCode=" + zipCode 
+ 					+ ", phone=" + phone + ", email='" + email + "' where cId=" + id + ";"); 	
+ 			System.out.println("Success! " + fName + " " + lName + " was updated.");
+ 		} catch (SQLException e) {
+ 			System.out.println("Connection Failed! Check output console");
+ 			e.printStackTrace();
+ 		}
+	}
+		 		 
 	public void execute() throws Exception {
 		
-			if(this.cmd.equals("getCustomers")){
+			if(this.cmd.equals("getCustomers")){			
 				this.getCustomers();
 			}
 			else if(this.cmd.equals("deleteReservation")){
@@ -157,6 +288,18 @@ class Command {
 			else if(this.cmd.equals("customerReservation")){
 				this.customerReservation();
 			}
+			else if( this.cmd.equals("checkPricing") ) {
+				 this.checkPricing();
+			}
+			else if( this.cmd.equals("addCustomer") ) {
+				 this.addCustomer();
+			}			
+			else if( this.cmd.equals("deleteCustomer") ) {
+				 this.deleteCustomer();
+			}	
+			else if( this.cmd.equals("updateCustomer") ) {
+				 this.updateCustomer();
+			}	
 			else{
 				throw new Exception("unrecognized command: " + this.cmd);
 			}
@@ -183,7 +326,7 @@ public class Console {
 	// read-execute-print loop
 	public void repl(Connection conn) {
 		while(true) {
-			try {
+			try {								
 				System.out.print("-> ");
 				String input = kbd.nextLine();
 				if (input.equals("quit")) break;
@@ -193,7 +336,7 @@ public class Console {
 				System.out.println("Error, " + e.getMessage());
 			}
 		}
-		System.out.println("bye");
+		System.out.println("Thanks for coming! Good Bye!");
 	}
 
 	public static void main(String args[]) {
@@ -217,7 +360,26 @@ public class Console {
 	    	} else {
 	    		System.out.println("Failed to make connection!");
 	    	}
-		Console console = new Console();
-		console.repl(connection);
+	    	
+    	System.out.println("Welcome to DeNGoHotelReservation!");
+		System.out.println("Please type the following: ");		
+		System.out.println("addCustomer - to add a customer");
+		System.out.println("deleteCustomer - to delete a customer");
+		System.out.println("getCustomers - to see all the  customers");
+		System.out.println("updateCustomer - to update customer's info");
+		System.out.println("addReservation - to add a reservation");
+		System.out.println("deleteReservation - to delete reservation");
+		System.out.println("extendReservation - to extend reservation");
+		System.out.println("changeRoom - to change a room");		
+		System.out.println("openRooms - to see open rooms");
+		System.out.println("updateRoomInfo - to update room's info");
+		System.out.println("checkRoomTypes - to see the room types");
+		System.out.println("getBedTypes - to see the bed types");
+		System.out.println("checkDates - to see the dates available");		
+		System.out.println("customerReservation [firstName] [lastName] - to see the customer's reservation");
+		System.out.println("checkPricing - to check for pricing");		
+		System.out.println("quit - to exit");
+	    Console console = new Console();
+		console.repl(connection);		
 	}
 }
