@@ -301,7 +301,6 @@ class Command {
 	}
 	
 	
-	//**TODO: ADD DATE
 	private void addReservation() throws ParseException{
 		try {					
 			this.openRooms();
@@ -315,20 +314,20 @@ class Command {
 			String dateOut;
 			Scanner scan = new Scanner(System.in);
  			System.out.print("First Name: ");
- 			fName = scan.next();
+ 			fName = scan.nextLine();
  			System.out.print("Last Name: ");
- 			lName = scan.next();
+ 			lName = scan.nextLine();
  			System.out.print("Date-in: ");
- 			dateIn = scan.next();
+ 			dateIn = scan.nextLine();
  			System.out.print("Date-out: ");
- 			dateOut = scan.next();
+ 			dateOut = scan.nextLine();
  			stmt = connection.createStatement();
  			rs = stmt.executeQuery("select * FROM CUSTOMER WHERE fName= '" + fName + "' AND lName= '" + lName + "';");
  			if (rs.next()) {
  				id = rs.getInt("cId");
  			}
  			System.out.print("Room Number: ");
- 			rName = scan.next(); 		
+ 			rName = scan.nextLine(); 		
  			rs = stmt.executeQuery("select * FROM ROOM WHERE rName= '" + rName + "';");
  			if (rs.next()) {
  				roomID = rs.getInt("roomID");
@@ -337,19 +336,25 @@ class Command {
 			String payDUE = "0";
 			int payAMT = 0;
 			boolean paid = false;			
-//			SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd"); 
-//	        java.sql.Date dIn= new java.sql.Date(format.parse(dateIn).getTime());
-//	        java.sql.Date dOut= new java.sql.Date(format.parse(dateOut).getTime());
-//	        java.sql.Date dDue= new java.sql.Date(format.parse(payDUE).getTime());
- 			stmt.executeUpdate("INSERT INTO RESERVATION " + "(cID, roomID, payAMT, paid)"
- 					+ " VALUES (" + id + ", " + roomID + ", " + payAMT + ", " + paid + ");"); 	
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");         	      
+			PreparedStatement pstmt = null;
+			String sql = "INSERT INTO RESERVATION " + "(cID, roomID, dateIN, dateOUT, payDUE, payAMT, paid)"
+					+ " VALUES(?,?,?,?,?,?,?)";
+			pstmt = (PreparedStatement) connection.prepareStatement(sql);
+			pstmt.setInt(1, id);
+			pstmt.setInt(2, roomID);
+			pstmt.setDate(3, java.sql.Date.valueOf(dateIn));
+			pstmt.setDate(4, java.sql.Date.valueOf(dateOut));
+			pstmt.setDate(5, java.sql.Date.valueOf(dateIn));
+			pstmt.setInt(6, payAMT);
+			pstmt.setBoolean(7, paid);			
+			pstmt.execute();
  			System.out.println("Success! " + fName + " " + lName + " your reservation was added."); 		
 		} catch (SQLException e) {
 			System.out.println("Connection Failed! Check output console");
 			e.printStackTrace();
 		}
 	}
-	
 	
 		 		 
 	public void execute() throws Exception {
