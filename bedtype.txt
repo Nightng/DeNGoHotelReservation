@@ -1,0 +1,3 @@
+	King	false	65
+	Queen	false	45
+	Full	false	25
