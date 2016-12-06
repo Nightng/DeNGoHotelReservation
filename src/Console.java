@@ -176,6 +176,13 @@ class Command {
 		 		    while(rs.next()){
 		 		       System.out.println("roomID = "+rs.getString("roomID")+", "+"price = " + rs.getInt("price"));
 		 		    }
+		 		   rs = stmt.executeQuery(" SELECT * FROM room AS r1 left join bedtype"
+		 		   		+ " on r1.bedTypeID = bedType.bedTypeID WHERE r1.price < (SELECT max(price) FROM room );");
+		 		  System.out.println("Where the following rooms are cheapest room that we offer: ");
+		 		   while(rs.next()){
+		 			  System.out.println("Room: "+ rs.getString("rName")+", Bed Type: " + rs.getString("bedName") 
+		 					  + ", Price: $" + rs.getInt("price"));
+		 		    }
 		 		} catch (SQLException e) {
 		 			System.out.println("Connection Failed! Check output console");
 		 			e.printStackTrace();
@@ -355,8 +362,7 @@ class Command {
 		}
 	}
 	
-	//price after extension?
-			private void extendReservation() {
+	private void extendReservation() {
 				try{
 					Scanner sc = new Scanner(System.in);
 					stmt = connection.createStatement();
@@ -416,6 +422,163 @@ class Command {
 					e.printStackTrace();
 				}
 			}
+	
+	private void payDues() {
+		try{
+			Scanner sc = new Scanner(System.in);
+			stmt = connection.createStatement();
+			String fName;
+			String lName;						
+			System.out.println( "Please input the following in order to pay your dues" );
+			System.out.println( "First Name: " );
+			fName = sc.nextLine();
+			System.out.println( "Last Name: ");
+			lName = sc.nextLine();
+			stmt = connection.createStatement();
+			String sql = "select *"
+					+ "FROM customer join reservation "
+					+ "where customer.cID = reservation.cID and fName= '" + fName + "' AND lName= '" + lName + "' "
+					+ "group by customer.cid;";
+			rs = stmt.executeQuery( sql );			
+			while( rs.next() ) {
+				boolean paid = rs.getBoolean("paid");
+				if(!paid){
+					int rID = rs.getInt("rID");
+					int cID = rs.getInt("cID");
+					int payAMT = rs.getInt("payAMT");
+					System.out.println("You owe: $" + payAMT);
+					System.out.println("Cash or Credit?");
+					String method = sc.nextLine();
+					System.out.println("How much are you paying?");
+					int amount = sc.nextInt();					
+					stmt = connection.createStatement();			
+		 			stmt.executeUpdate("INSERT INTO payment " + "(rID, cID, method, amount)"
+		 					+ " VALUES (" + rID + ", " + cID + ", '" + method + "', " + amount + ");"); 	
+		 			System.out.println("Success! your payment was submitted.");
+		 			stmt.executeUpdate("UPDATE reservation SET paid=" + true + " where rId=" + rID + ";"); 	
+				}
+				else{
+					System.out.println("You have nothing due");
+				}
+			}
+		}
+		catch (SQLException e) {
+			System.out.println("Connection Failed! Check output console");
+			e.printStackTrace();
+		}
+	}
+	
+	private void checkPayment() {
+		try{
+			Scanner sc = new Scanner(System.in);
+			stmt = connection.createStatement();
+			String fName;
+			String lName;
+			int id = 0;
+			int amount = 0;
+			System.out.println( "Please input the following in order to check your payment." );
+			System.out.println( "First Name: " );
+			fName = sc.nextLine();
+			System.out.println( "Last Name: ");
+			lName = sc.nextLine();
+			stmt = connection.createStatement();
+			String sql = "select *, SUM(payAMT) "
+					+ "FROM customer join reservation "
+					+ "where customer.cID = reservation.cID and fName= '" + fName + "' AND lName= '" + lName + "' "
+					+ "group by customer.cid;";
+			rs = stmt.executeQuery( sql );			
+			while( rs.next() ) {
+				amount = rs.getInt("SUM(payAMT)");
+			}
+			sql = "select *, sum(amount) FROM customer left join payment on customer.cID = payment.cID " 
+					+ "where fName= '" + fName + "' AND lName= '" + lName + "';";         
+			rs = stmt.executeQuery(sql);
+			while( rs.next() ) {
+				System.out.println("You amount due is: $: " + amount + " and you have paid: $" + rs.getInt("SUM(amount)"));			
+			}
+			sql = "select * from customer join (SELECT *, COUNT(cID) FROM payment GROUP BY cID HAVING COUNT(cID) >= 0) as p"
+					+ " where customer.cid = p.cid and fName = '" + fName + "' and lname = '"+ lName + "';";         
+			rs = stmt.executeQuery(sql);
+			while( rs.next() ) {
+				System.out.println("You have made the following amount of payments: " + rs.getInt("COUNT(cID)"));			
+			}			
+		}
+		catch (SQLException e) {
+			System.out.println("Connection Failed! Check output console");
+			e.printStackTrace();
+		}
+	}
+	
+	private void changeRoom() throws ParseException {
+		try {
+ 			String fName;
+ 			String lName;
+ 			String changedRoomName;
+ 			Scanner scan = new Scanner(System.in);
+ 			System.out.println("Please input the following to change rooms: ");
+ 			System.out.print("First Name: ");
+ 			fName = scan.nextLine();
+ 			System.out.print("Last Name: ");
+ 			lName = scan.nextLine();
+ 			this.openRooms();
+ 			System.out.println("Enter the room where you would like to change to: ");
+ 			changedRoomName = scan.nextLine();
+ 			
+ 			int roomIden = 0;
+ 			int newRoomIden = 0;
+ 			int custIden = 0;
+ 			PreparedStatement pstmt = null;
+			/*String sql = "update "
+					+ "select c.cID, c.fName, c.lName, res.roomID, r.reserved from Customer as c"
+					+ "INNER JOIN Reservation as res on res.cID = c.cID"
+					+ "INNER JOIN Room as r on r.roomID = res.roomID"
+					+ "WHERE fName= '" + fName + "' AND lName= '" + lName + "';";*/
+ 			
+			//used to get roomID and cID of the person
+			String sql = "select *"
+					+ "from customer join reservation using(cID)"
+					+ "WHERE fName= '" + fName + "' AND lName= '" + lName + "';";
+ 			stmt = connection.createStatement();
+ 			rs = stmt.executeQuery(sql);
+ 			if( rs.next() ) {
+ 				roomIden = rs.getInt("roomID");
+ 				custIden = rs.getInt("cID");
+ 			}
+ 			System.out.println("1st check!!!!!!");
+ 			//get the new roomID given by the rName 
+ 			sql = "select *"
+					+ "from Room"
+					+ "WHERE rName= '" + changedRoomName + "';";
+ 			//stmt = connection.createStatement();
+ 			rs = stmt.executeQuery(sql);
+ 			if( rs.next() ) {
+ 				newRoomIden = rs.getInt("roomID");
+ 			}
+ 			System.out.println("2nd check!!!!!!");
+ 			//sets old room to empty
+ 			sql = "UPDATE Room SET reserved = false WHERE roomID = ?";
+ 			pstmt = (PreparedStatement) connection.prepareStatement(sql);
+ 			pstmt.setInt(1, roomIden);
+ 			pstmt.executeUpdate();
+ 			System.out.println("3rd check!!!!!");
+ 			//sets new changed room to reserved
+ 			sql = "UPDATE Room SET reserved = true WHERE roomID = ?";
+ 			pstmt = (PreparedStatement) connection.prepareStatement(sql);
+ 			pstmt.setInt(1, newRoomIden);
+ 			pstmt.executeUpdate();
+ 			System.out.println("4th check!!!!!");
+ 			//updates the customers room to the changedRoom
+ 			sql = "UPDATE Reservatoin SET roomID = ? WHERE cID = ?";
+ 			pstmt = (PreparedStatement) connection.prepareStatement(sql);
+ 			pstmt.setInt(1, newRoomIden);
+ 			pstmt.setInt(2, custIden);
+ 			pstmt.executeUpdate(); 			
+ 			System.out.println("Success! " + fName + " " + lName + "'s room was changed.");
+ 		} catch (SQLException e) {
+ 			System.out.println("Connection Failed! Check output console");
+ 			e.printStackTrace();
+ 		}
+	}
 		 		 
 	public void execute() throws Exception {
 		
@@ -454,6 +617,15 @@ class Command {
 			}
 			else if( this.cmd.equals("extendReservation")){
 				this.extendReservation();
+			}
+			else if( this.cmd.equals("checkPayment")){
+				this.checkPayment();
+			}
+			else if( this.cmd.equals("payDues")){
+				this.payDues();
+			}
+			else if( this.cmd.equals("changeRoom")){
+				this.changeRoom();
 			}
 			else{
 				throw new Exception("unrecognized command: " + this.cmd);
@@ -527,10 +699,10 @@ public class Console {
 		System.out.println("extendReservation - to extend reservation");
 		System.out.println("changeRoom - to change a room");		
 		System.out.println("openRooms - to see open rooms");
-		System.out.println("updateRoomInfo - to update room's info");
+		System.out.println("checkPayment - to check user's payment");
 		System.out.println("checkRoomTypes - to see the room types");
 		System.out.println("getBedTypes - to see the bed types");
-		System.out.println("checkDates - to see the dates available");		
+		System.out.println("payDues - to make a payment");		
 		System.out.println("customerReservation [firstName] [lastName] - to see the customer's reservation");
 		System.out.println("checkPricing - to check for pricing");		
 		System.out.println("checkRoomTypes - to check for room size types");		
