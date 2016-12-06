@@ -478,8 +478,7 @@ class Command {
 	
 	private void checkPayment() {
 		try{
-			Scanner sc = new Scanner(System.in);
-			stmt = connection.createStatement();
+			Scanner sc = new Scanner(System.in);			
 			String fName;
 			String lName;
 			int id = 0;
@@ -517,7 +516,7 @@ class Command {
 		}
 	}
 	
-	private void changeRoom() throws ParseException {
+	private void changeRoom() {
 		try {
  			String fName;
  			String lName;
@@ -551,36 +550,46 @@ class Command {
  			if( rs.next() ) {
  				roomIden = rs.getInt("roomID");
  				custIden = rs.getInt("cID");
+ 				System.out.println(roomIden);
+ 				System.out.println(custIden);
  			}
- 			System.out.println("1st check!!!!!!");
+
  			//get the new roomID given by the rName 
- 			sql = "select *"
-					+ "from Room"
+ 			String sql2 = "select * "
+					+ "from Room "
 					+ "WHERE rName= '" + changedRoomName + "';";
- 			//stmt = connection.createStatement();
- 			rs = stmt.executeQuery(sql);
- 			if( rs.next() ) {
- 				newRoomIden = rs.getInt("roomID");
+ 			Statement stmt2 = connection.createStatement();
+ 			ResultSet rs2 = stmt2.executeQuery(sql2);
+ 			if( rs2.next() ) {
+ 				newRoomIden = rs2.getInt("roomID");
  			}
- 			System.out.println("2nd check!!!!!!");
+ 			System.out.println("new roomID= " + newRoomIden);
+
  			//sets old room to empty
- 			sql = "UPDATE Room SET reserved = false WHERE roomID = ?";
- 			pstmt = (PreparedStatement) connection.prepareStatement(sql);
- 			pstmt.setInt(1, roomIden);
+ 			String sql3 = "UPDATE Room SET reserved = ? WHERE roomID = ?";
+ 			pstmt = (PreparedStatement) connection.prepareStatement(sql3);
+ 			pstmt.setBoolean(1, false);
+ 			pstmt.setInt(2, roomIden);
  			pstmt.executeUpdate();
- 			System.out.println("3rd check!!!!!");
+ 			System.out.println("old roomID= " + roomIden);
+
  			//sets new changed room to reserved
- 			sql = "UPDATE Room SET reserved = true WHERE roomID = ?";
- 			pstmt = (PreparedStatement) connection.prepareStatement(sql);
- 			pstmt.setInt(1, newRoomIden);
- 			pstmt.executeUpdate();
- 			System.out.println("4th check!!!!!");
+ 			String sql4 = "UPDATE Room SET reserved = ? WHERE roomID = ?";
+ 			PreparedStatement pstmt2 = (PreparedStatement) connection.prepareStatement(sql4);
+ 			pstmt2.setBoolean(1, true);
+ 			pstmt2.setInt(2, newRoomIden);
+ 			pstmt2.executeUpdate();
+ 			
+ 			
  			//updates the customers room to the changedRoom
- 			sql = "UPDATE Reservatoin SET roomID = ? WHERE cID = ?";
- 			pstmt = (PreparedStatement) connection.prepareStatement(sql);
- 			pstmt.setInt(1, newRoomIden);
- 			pstmt.setInt(2, custIden);
- 			pstmt.executeUpdate(); 			
+ 			String sql5 = "UPDATE Reservation SET roomID = ? WHERE cID = ?";
+ 			PreparedStatement pstmt3 = (PreparedStatement) connection.prepareStatement(sql5);
+ 			pstmt3.setInt(1, newRoomIden);
+ 			pstmt3.setInt(2, custIden);
+ 			pstmt3.executeUpdate();
+ 			
+ 			
+ 			
  			System.out.println("Success! " + fName + " " + lName + "'s room was changed.");
  		} catch (SQLException e) {
  			System.out.println("Connection Failed! Check output console");
@@ -735,8 +744,7 @@ public class Console {
 		System.out.println("extendReservation - to extend reservation");
 		System.out.println("changeRoom - to change a room");		
 		System.out.println("openRooms - to see open rooms");
-		System.out.println("checkPayment - to check user's payment");
-		System.out.println("checkRoomTypes - to see the room types");
+		System.out.println("checkPayment - to check user's payment");		
 		System.out.println("getBedTypes - to see the bed types");
 		System.out.println("payDues - to make a payment");		
 		System.out.println("customerReservation [firstName] [lastName] - to see the customer's reservation");
