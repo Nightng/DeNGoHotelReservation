@@ -333,7 +333,6 @@ class Command {
  				roomID = rs.getInt("roomID");
  			}
 			stmt = connection.createStatement();		
-			String payDUE = "0";
 			int payAMT = 0;
 			boolean paid = false;			
 			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");         	      
@@ -356,6 +355,67 @@ class Command {
 		}
 	}
 	
+	//price after extension?
+			private void extendReservation() {
+				try{
+					Scanner sc = new Scanner(System.in);
+					stmt = connection.createStatement();
+					String fName;
+					String lName;
+					int id = 0;
+					int amount = 0;
+					Date dateIn = null;
+					Date dateOut = null;
+					System.out.println( "Please input the following to extend reservation." );
+					System.out.println( "First Name: " );
+					fName = sc.nextLine();
+					System.out.println( "Last Name: ");
+					lName = sc.nextLine();
+					stmt = connection.createStatement();
+					String sql = "select cID, fName, lName, rID, dateIN, dateOUT, payAMT, paid "
+							+ "from customer join reservation using(cID)"
+							+ "WHERE fName= '" + fName + "' AND lName= '" + lName + "';";
+					rs = stmt.executeQuery( sql );
+					
+					while( rs.next() ) {
+						System.out.println("cID= " + rs.getInt("cID") + ", fName= " + rs.getString("fName") + ", lName= " + rs.getString("lName") + ", rID= " + rs.getInt("rID") + 
+								", dateIN= " + rs.getDate("dateIN") + ", dateOUT= " + rs.getDate("dateOUT") + ", payAMT= " + rs.getInt("payAMT") + ", paid= " + rs.getBoolean("paid") );
+						
+					}
+					rs = stmt.executeQuery(sql);
+					if( rs.next() ) {
+						id = rs.getInt("cID");
+						amount = rs.getInt("payAMT");
+						dateIn = rs.getDate("dateIN");
+						dateOut = rs.getDate("dateOUT");
+					}
+					boolean validDate = false;
+					String newDate = null;
+					while( !validDate ) {
+						System.out.println("Enter the new end date: ");
+						newDate = sc.nextLine();
+						if( java.sql.Date.valueOf(newDate).after(dateOut) ) {
+							validDate = true;
+						} else {
+							System.out.println("invalid date: new date must come after the old date.");
+						}
+					}
+					
+					PreparedStatement pstmt = null;
+					sql = "Update Reservation SET dateOUT = ?, payAMT = ? WHERE cID = ?";
+					pstmt = (PreparedStatement) connection.prepareStatement( sql );
+					pstmt.setDate( 1, java.sql.Date.valueOf(newDate) );
+					pstmt.setInt(2, amount + 150);
+					pstmt.setInt(3, id);
+					pstmt.executeUpdate();
+					
+					System.out.println("Reservation extended until " + newDate + "!");
+				}
+				catch (SQLException e) {
+					System.out.println("Connection Failed! Check output console");
+					e.printStackTrace();
+				}
+			}
 		 		 
 	public void execute() throws Exception {
 		
@@ -391,6 +451,9 @@ class Command {
 			}	
 			else if( this.cmd.equals("checkRoomTypes")){
 				this.checkRoomTypes();
+			}
+			else if( this.cmd.equals("extendReservation")){
+				this.extendReservation();
 			}
 			else{
 				throw new Exception("unrecognized command: " + this.cmd);
