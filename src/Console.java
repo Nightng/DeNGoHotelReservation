@@ -9,9 +9,11 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.Properties;
 
 import javax.sql.DataSource;
+
 
 
 
@@ -62,8 +64,14 @@ class Command {
 			stmt = connection.createStatement();
 			rs = stmt.executeQuery("select * from customer");
 		    while(rs.next()){
-		       System.out.println("Name="+rs.getString("fName")+" "+rs.getString("lName"));
+		       System.out.println("Name: "+rs.getString("fName")+" "+rs.getString("lName"));
 		    }
+		    rs = stmt.executeQuery("SELECT DISTINCT * FROM customer as c "
+		    		+ "WHERE c.cID IN (SELECT cID FROM reservation where reservation.paid = 0);");
+		    System.out.println("Also, the following customers still haven't paid yet");
+		    while(rs.next()){
+			       System.out.println("Name: "+rs.getString("fName")+" "+rs.getString("lName"));
+			    }
 		} catch (SQLException e) {
 			System.out.println("Connection Failed! Check output console");
 			e.printStackTrace();
@@ -579,6 +587,31 @@ class Command {
  			e.printStackTrace();
  		}
 	}
+	
+	private void archive() {
+		try{
+		DataSource ds = DataSourceFactory.getMySQLDataSource(); 
+		Connection conn = ds.getConnection();
+
+		String date;
+		Scanner scan = new Scanner(System.in);
+		System.out.println("Archive reservations before YYYY-MM-DD: ");
+		date = scan.next();
+		//java.sql.Timestamp dd = java.sql.Timestamp.valueOf(date + " 00:00:00");
+		java.sql.Date dt = java.sql.Date.valueOf(date);
+
+		System.out.println(dt);
+		Timestamp t = new Timestamp(dt.getTime());
+		System.out.println(t);
+
+		java.sql.CallableStatement cs = conn.prepareCall("{CALL archiveReservations(?)}");
+		cs.setTimestamp(1, t);
+		cs.execute();
+
+		} catch (SQLException e) {
+		System.out.println("Please enter a valid date.");
+		}
+		}
 		 		 
 	public void execute() throws Exception {
 		
@@ -626,6 +659,9 @@ class Command {
 			}
 			else if( this.cmd.equals("changeRoom")){
 				this.changeRoom();
+			}
+			else if( this.cmd.equals("archive")){
+				this.archive();
 			}
 			else{
 				throw new Exception("unrecognized command: " + this.cmd);
